@@ -1,0 +1,30 @@
+name: cn
+version: "0.1.0"
+about: Convert scans of handwritten notes to PDF
+author: Mariusz Gumienny <mkgumienny@gmail.com>
+
+args:
+    - input:
+        help: The input images to use
+        short: i
+        long: input
+        takes_value: true
+        multiple: true
+        min_values: 1
+        required: true
+
+    - verbose:
+        help: Prints detailed information
+        short: v
+        long: verbose
+
+    - sort_numerically:
+        help: Keep filenames ordered as specified
+        short: s
+        long: sort
+
+    - basename:
+        help: Output PNG filename base
+        short: b
+        long: basename
+        takes_value: true

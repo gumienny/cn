@@ -1,5 +1,6 @@
-use clap::{App, Arg};
+use clap::App;
 
+#[derive(Debug)]
 pub struct Options {
     pub verbose: bool,
     pub sort_numerically: bool,
@@ -24,40 +25,9 @@ impl Options {
     pub fn load() -> Self {
         let mut options = Options::default();
 
-        let matches = App::new(crate_name!())
-            .version(crate_version!())
-            .author(crate_authors!("\n"))
-            .about(crate_description!())
-            .arg(
-                Arg::with_name("input")
-                    .help("The input images to use")
-                    .short("i")
-                    .long("input")
-                    .takes_value(true)
-                    .multiple(true)
-                    .min_values(1)
-                    .required(true),
-            )
-            .arg(
-                Arg::with_name("verbose")
-                    .short("v")
-                    .long("verbose")
-                    .help("Prints detailed information"),
-            )
-            .arg(
-                Arg::with_name("sort_numerically")
-                    .short("s")
-                    .long("sort")
-                    .help("Keep filenames ordered as specified"),
-            )
-            .arg(
-                Arg::with_name("basename")
-                    .short("b")
-                    .long("base")
-                    .takes_value(true)
-                    .help("Output PNG filename base"),
-            )
-            .get_matches();
+        let yml = load_yaml!("cli-config.yml");
+
+        let matches = App::from(yml).get_matches();
 
         if matches.is_present("verbose") {
             options.verbose = true;
@@ -75,24 +45,20 @@ impl Options {
             options.input_filenames = in_v.map(|s| s.to_string()).collect();
 
             if options.sort_numerically {
-                use std::cmp::Ordering::*;
-
-                options.input_filenames.sort_by(|a: &String, b: &String| {
-                    let n1 = get_number_from_string(a);
-                    let n2 = get_number_from_string(b);
-
-                    if n1 > n2 {
-                        Greater
-                    } else if n1 < n2 {
-                        Less
-                    } else {
-                        Equal
-                    }
-                });
+                options.sort_filenames();
             }
         }
 
         options
+    }
+
+    fn sort_filenames(&mut self) {
+        self.input_filenames.sort_by(|a: &String, b: &String| {
+            let n1 = get_number_from_string(a);
+            let n2 = get_number_from_string(b);
+
+            n1.cmp(&n2)
+        });
     }
 }
 
@@ -112,11 +78,20 @@ mod tests {
     #[test]
     fn sort_numerically() {
         let mut options = Options::default();
+
+        options.input_filenames = vec!["010".to_string(), "2".to_string(), "a".to_string()];
+
+        options.sort_filenames();
+
+        assert_eq!(
+            options.input_filenames,
+            vec!["a".to_string(), "2".to_string(), "010".to_string()]
+        );
     }
 
     #[test]
     fn get_number_from_filename() {
-        assert_eq!(get_number_from_string("photo123.png"), 123u64);
-        assert_eq!(get_number_from_string("abc"), 0u64);
+        assert_eq!(get_number_from_string("photo123.png"), 123usize);
+        assert_eq!(get_number_from_string("abc"), 0usize);
     }
 }
